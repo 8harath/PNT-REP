@@ -37,29 +37,69 @@
         
         <div class="row">
             <div class="col-lg-10 mx-auto">
-                <!-- Stats card -->
+                <!-- Stats card with enhanced visualization -->
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5 class="mb-0"><i class="fas fa-tachometer-alt"></i> Parking Statistics</h5>
                     </div>
                     <div class="card-body">
-                        <div class="stats-card">
-                            <div class="stat-item">
-                                <div class="stat-value total-slots">{{ result.total_slots }}</div>
-                                <div class="stat-label">Total Parking Slots</div>
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="stats-card">
+                                    <div class="stat-item">
+                                        <div class="stat-value total-slots">{{ result.total_slots }}</div>
+                                        <div class="stat-label">Total Parking Slots</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-value occupied-slots">{{ result.occupied_slots }}</div>
+                                        <div class="stat-label">Occupied Slots</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-value available-slots">{{ result.available_slots }}</div>
+                                        <div class="stat-label">Available Slots</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-value">{{ (result.occupied_slots / result.total_slots * 100) | round(1) }}%</div>
+                                        <div class="stat-label">Occupancy Rate</div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="stat-item">
-                                <div class="stat-value occupied-slots">{{ result.occupied_slots }}</div>
-                                <div class="stat-label">Occupied Slots</div>
+                            <div class="col-md-6">
+                                <div class="stats-card">
+                                    <!-- Edge case statistics -->
+                                    <div class="stat-item">
+                                        <div class="stat-value special-zones">{{ result.special_slots|default(0) }}</div>
+                                        <div class="stat-label">Special Zones</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-value large-vehicles" style="color: #FFA500;">{{ result.large_vehicles|default(0) }}</div>
+                                        <div class="stat-label">Large Vehicles</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-value moving-vehicles" style="color: #00A5FF;">{{ result.moving_vehicles|default(0) }}</div>
+                                        <div class="stat-label">Moving Vehicles</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-value misaligned" style="color: #B400B4;">{{ result.misaligned_vehicles|default(0) }}</div>
+                                        <div class="stat-label">Misaligned Parking</div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="stat-item">
-                                <div class="stat-value available-slots">{{ result.available_slots }}</div>
-                                <div class="stat-label">Available Slots</div>
+                        </div>
+                        
+                        <!-- Progress bar for parking capacity -->
+                        <div class="progress-container mt-3">
+                            <h6 class="mb-2">Parking Capacity Usage</h6>
+                            <div class="progress" style="height: 25px;">
+                                <div class="progress-bar bg-danger" role="progressbar" 
+                                     style="width: {{ (result.occupied_slots / result.total_slots * 100) | round(1) }}%;" 
+                                     aria-valuenow="{{ result.occupied_slots }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="{{ result.total_slots }}">
+                                     {{ (result.occupied_slots / result.total_slots * 100) | round(1) }}% Full
+                                </div>
                             </div>
-                            <div class="stat-item">
-                                <div class="stat-value">{{ (result.occupied_slots / result.total_slots * 100) | round(1) }}%</div>
-                                <div class="stat-label">Occupancy Rate</div>
-                            </div>
+                            <small class="text-muted mt-1 d-block">{{ result.occupied_slots }} of {{ result.total_slots }} parking spaces occupied</small>
                         </div>
                     </div>
                 </div>

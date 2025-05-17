@@ -75,11 +75,16 @@ def upload_file():
             _, buffer = cv2.imencode('.png', result['annotated_image'])
             img_str = base64.b64encode(buffer).decode('utf-8')
             
-            # Store results in session
+            # Store enhanced results with all edge case data in session
             session['result_data'] = {
                 'total_slots': result['total_slots'],
                 'occupied_slots': result['occupied_slots'],
                 'available_slots': result['available_slots'],
+                'special_slots': result.get('special_slots', 0),
+                'special_occupied': result.get('special_occupied', 0),
+                'large_vehicles': result.get('large_vehicles', 0),
+                'moving_vehicles': result.get('moving_vehicles', 0),
+                'misaligned_vehicles': result.get('misaligned_vehicles', 0),
                 'image_data': img_str,
                 'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             }

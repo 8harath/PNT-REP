@@ -1,0 +1,106 @@
+1. High-Level Scene Description (Aerial View)
+
+    The image is a top-down aerial view of a large parking lot.
+
+    There are multiple vertical lanes of parked vehicles separated by islands (concrete dividers with poles/trees).
+
+    The parking lot layout is grid-based, with each row containing standard car-sized slots.
+
+    Some areas show handicap parking (blue lines) and diagonal striping, likely indicating no-parking or restricted zones.
+
+    Vehicles of varying sizes, types, colors, and orientations are visible.
+
+2. Key Elements to Detect
+
+Here’s what the model would ideally detect:
+
+    Total number of parking slots (occupied + unoccupied)
+
+    Occupied parking slots
+
+    Empty parking slots
+
+    Trucks or vehicles occupying multiple slots
+
+    Misaligned / improperly parked vehicles
+
+    Moving vehicles (cars not inside a slot, possibly driving)
+
+    Non-standard objects (e.g., trailers, food trucks, construction gear)
+
+    Areas with no valid parking (yellow cross-hatched zones)
+
+3. Edge Cases / Challenges for the Model
+a. Trucks/Trailers occupying multiple slots
+
+    There are at least 3 large trucks or trailers occupying 3 to 4 car-sized slots.
+
+    This requires the model to segment large objects and determine how many slots they block.
+
+b. Irregular parking (misaligned or diagonal vehicles)
+
+    Some vehicles are parked not aligned perfectly within the white lines, affecting slot-level detection.
+
+    At least 2–3 vehicles are protruding out or diagonally placed.
+
+c. Moving vehicles
+
+    A few vehicles are not parked but are either moving or idle within drive lanes.
+
+    Example: A white car at the center-right and red vehicle at the top-center angled diagonally—these should not be counted as occupying slots.
+
+d. Color & Lighting Variation
+
+    There is no dominant vehicle color, and some shadows from dividers or structures may affect detection contrast.
+
+    The system needs robust instance segmentation with color invariance.
+
+e. Special zones
+
+    Some areas have:
+
+        Blue painted lines – usually for handicapped spots.
+
+        Yellow striped zones – non-parking areas.
+
+        These should be excluded from total slot counts.
+
+f. Slot Markings Occlusion
+
+    In some cases, slot boundaries are not clearly visible, especially under:
+
+        Long vehicles
+
+        Shadowed areas
+
+        Trucks blocking 2+ slots
+
+    The model should infer slot locations based on parking grid layout extrapolation.
+
+4. Additional Observations
+Observation	Impact
+Vehicles are parked on both sides of dividers	Increases complexity of associating cars to slots
+Some slots are completely empty	Good for validation of empty slot detection
+Long concrete dividers split every two lanes	Useful landmarks for grid alignment
+One red car at the far bottom outside slot grid	Edge case of non-parking zone occupation
+5. Model Design Considerations
+
+To address the above, your model needs:
+
+    Semantic Segmentation for:
+
+        Parking slot lines
+
+        Special zones
+
+    Instance Segmentation or Object Detection for:
+
+        Cars, trucks, trailers
+
+    Heuristics or Post-processing for:
+
+        Slot-car association
+
+        Inferring partially visible slots
+
+    Perspective correction or grid fitting to align the virtual grid over the parking layout
