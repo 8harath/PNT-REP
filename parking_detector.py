@@ -116,7 +116,8 @@ class ParkingDetector:
         return all_slots
     
     def detect_slots_by_grid(self, image, detected_slots):
-        """Use grid analysis to identify potential parking slots not detected directly"""
+        """Use grid analysis to identify potential parking slots not detected directly, 
+        including occluded markings under vehicles or in shadows"""
         height, width = image.shape[:2]
         
         # Create a mask with the detected slots
@@ -128,7 +129,33 @@ class ParkingDetector:
         # Find organized rows and columns of parking slots
         rows, cols = self.find_parking_grid(detected_slots)
         
-        # Infer missing slots based on the grid pattern
+        # Enhanced: Calculate confidence scores for each grid location
+        grid_confidence = {}
+        for row in rows:
+            for col in cols:
+                # Initial confidence based on grid alignment
+                confidence = 0.7  # Base confidence for a grid-inferred slot
+                
+                # Check surrounding slots to boost confidence
+                slot_count = 0
+                for slot in detected_slots:
+                    # Calculate distance to this slot center
+                    slot_center_x = slot['x'] + slot['width'] // 2
+                    slot_center_y = slot['y'] + slot['height'] // 2
+                    distance = np.sqrt((col - slot_center_x)**2 + (row - slot_center_y)**2)
+                    
+                    # If slot is nearby in grid, increase confidence
+                    if distance < 2 * self.slot_width:
+                        slot_count += 1
+                        confidence += 0.05  # Small boost for each nearby slot
+                
+                # More nearby slots means stronger grid pattern
+                if slot_count >= 3:
+                    confidence += 0.1  # Additional boost for strong grid evidence
+                
+                grid_confidence[(row, col)] = min(confidence, 0.98)  # Cap at 0.98
+        
+        # Infer missing slots based on the grid pattern with enhanced checks
         inferred_slots = []
         for row in rows:
             for col in cols:
@@ -137,27 +164,61 @@ class ParkingDetector:
                 center_y = row
                 
                 # Skip if this area already has a detected slot
-                region = slot_mask[center_y-self.slot_height//2:center_y+self.slot_height//2, 
-                                  center_x-self.slot_width//2:center_x+self.slot_width//2]
+                region_y_start = max(0, center_y - self.slot_height // 2)
+                region_y_end = min(height, center_y + self.slot_height // 2)
+                region_x_start = max(0, center_x - self.slot_width // 2)
+                region_x_end = min(width, center_x + self.slot_width // 2)
+                
+                region = slot_mask[region_y_start:region_y_end, region_x_start:region_x_end]
                 if region.size > 0 and np.sum(region) > 0:
                     continue
+                
+                # Get grid confidence for this location
+                confidence = grid_confidence.get((row, col), 0.5)
+                
+                # Check for vehicles that might be occluding this slot
+                is_occluded = False
+                vehicle_class = None
+                
+                # Extract the region of interest from the image
+                roi_y_start = max(0, center_y - self.slot_height // 2)
+                roi_y_end = min(height, center_y + self.slot_height // 2)
+                roi_x_start = max(0, center_x - self.slot_width // 2)
+                roi_x_end = min(width, center_x + self.slot_width // 2)
+                
+                roi = image[roi_y_start:roi_y_end, roi_x_start:roi_x_end]
+                
+                if roi.size > 0:
+                    # Check darkness (possible shadow) or high color variance (possible vehicle)
+                    gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+                    mean_intensity = np.mean(gray_roi)
+                    std_intensity = np.std(gray_roi)
+                    
+                    # High color variance and medium-low intensity often indicates a vehicle
+                    if std_intensity > 40 and mean_intensity < 150:
+                        is_occluded = True
+                        confidence += 0.1  # Slightly increase confidence for likely occluded slots
                 
                 # Check for special zone markings
                 is_special = self.check_for_special_zone(
                     image, 
-                    center_x-self.slot_width//2, 
-                    center_y-self.slot_height//2,
+                    center_x - self.slot_width // 2,
+                    center_y - self.slot_height // 2,
                     self.slot_width, 
                     self.slot_height
                 )
                 
+                # Add the inferred slot with enhanced attributes
                 inferred_slots.append({
-                    'x': center_x - self.slot_width//2,
-                    'y': center_y - self.slot_height//2,
+                    'x': center_x - self.slot_width // 2,
+                    'y': center_y - self.slot_height // 2,
                     'width': self.slot_width,
                     'height': self.slot_height,
                     'is_special': is_special,
-                    'inferred': True
+                    'inferred': True,
+                    'confidence': confidence,
+                    'is_occluded': is_occluded,
+                    'vehicle_class': vehicle_class
                 })
         
         return inferred_slots
@@ -276,7 +337,14 @@ class ParkingDetector:
         # Extract the region
         x = max(0, x)
         y = max(0, y)
-        region = image[y:y+height, x:x+width]
+        x_end = min(image.shape[1], x + width)
+        y_end = min(image.shape[0], y + height)
+        
+        # Check if region is valid
+        if x >= x_end or y >= y_end:
+            return False
+            
+        region = image[y:y_end, x:x_end]
         
         if region.size == 0:
             return False
@@ -284,23 +352,55 @@ class ParkingDetector:
         # Convert to HSV for better color detection
         hsv = cv2.cvtColor(region.copy(), cv2.COLOR_BGR2HSV)
         
-        # Define blue color range for handicapped parking
-        lower_blue = np.array([100, 50, 50])
-        upper_blue = np.array([130, 255, 255])
-        blue_mask = cv2.inRange(hsv, lower_blue, upper_blue)
+        # Define multiple blue color ranges for handicapped parking to handle different shades
+        blue_ranges = [
+            (np.array([100, 50, 50]), np.array([130, 255, 255])),  # Standard blue
+            (np.array([90, 50, 50]), np.array([120, 255, 255])),   # Lighter blue
+            (np.array([110, 40, 40]), np.array([140, 255, 255]))   # Darker blue
+        ]
         
-        # Define yellow color range for special zones
-        lower_yellow = np.array([20, 100, 100])
-        upper_yellow = np.array([30, 255, 255])
-        yellow_mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
+        # Define multiple yellow color ranges for special zones to be more robust
+        yellow_ranges = [
+            (np.array([20, 100, 100]), np.array([30, 255, 255])),  # Standard yellow
+            (np.array([15, 80, 100]), np.array([35, 255, 255])),   # Broader yellow range
+            (np.array([20, 100, 150]), np.array([30, 255, 255]))   # Brighter yellow
+        ]
         
-        # Combine masks
-        special_mask = cv2.bitwise_or(blue_mask, yellow_mask)
+        # Initialize combined mask
+        special_mask = np.zeros((region.shape[0], region.shape[1]), dtype=np.uint8)
+        
+        # Process all blue ranges
+        for lower_blue, upper_blue in blue_ranges:
+            blue_mask = cv2.inRange(hsv, lower_blue, upper_blue)
+            special_mask = cv2.bitwise_or(special_mask, blue_mask)
+            
+        # Process all yellow ranges
+        for lower_yellow, upper_yellow in yellow_ranges:
+            yellow_mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
+            special_mask = cv2.bitwise_or(special_mask, yellow_mask)
+        
+        # Apply morphological operations to enhance detection
+        kernel = np.ones((3, 3), np.uint8)
+        special_mask = cv2.morphologyEx(special_mask, cv2.MORPH_OPEN, kernel)
+        special_mask = cv2.morphologyEx(special_mask, cv2.MORPH_CLOSE, kernel)
         
         # Calculate the percentage of special colors
-        special_percentage = (np.sum(special_mask > 0) / (width * height)) * 100
+        special_percentage = (np.sum(special_mask > 0) / (region.shape[0] * region.shape[1])) * 100
         
-        return special_percentage > 5  # Return True if more than 5% has special markings
+        # Check for specific handicap symbol patterns (simple check for connected components)
+        if special_percentage > 3:
+            # Find contours to detect symbol shapes
+            contours, _ = cv2.findContours(special_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            
+            # Look for contours that could be part of a handicap symbol
+            for contour in contours:
+                area = cv2.contourArea(contour)
+                # If we find a sufficiently large colored area, more likely to be a special marking
+                if area > 50:
+                    return True
+        
+        # Return True if significant percentage of the region has special markings
+        return special_percentage > 5
     
     def analyze_slots_and_vehicles(self, image, slots, vehicles):
         """Analyze which slots are occupied by vehicles"""
@@ -420,6 +520,12 @@ class ParkingDetector:
                         occupied = True
                         occupying_vehicle = vehicle
                         
+                        # Mark misaligned vehicles (less overlap but center is in the slot)
+                        if overlap_percentage <= 30 and center_in_slot:
+                            slot['misaligned'] = True
+                        else:
+                            slot['misaligned'] = False
+                        
                         # Check if this is a large vehicle (bus or truck)
                         if vehicle['class_id'] in [5, 7]:  # bus or truck
                             large_vehicle = True
@@ -436,7 +542,11 @@ class ParkingDetector:
             slot['occupied'] = occupied
             slot['is_special'] = is_special
             slot['large_vehicle'] = large_vehicle
-            slot['vehicle_class'] = occupying_vehicle['class_id'] if occupied else None
+            # Fix potential bug with None access
+            if occupied and occupying_vehicle:
+                slot['vehicle_class'] = occupying_vehicle['class_id']
+            else:
+                slot['vehicle_class'] = None
             slot['affected_by_moving'] = affected_by_moving
             
             # Draw the slot on the annotated image with enhanced visual coding
