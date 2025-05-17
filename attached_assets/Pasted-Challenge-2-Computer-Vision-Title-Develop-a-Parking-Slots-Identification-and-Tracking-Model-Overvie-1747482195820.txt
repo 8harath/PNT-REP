@@ -1,0 +1,98 @@
+Challenge 2: Computer Vision
+Title
+Develop a Parking Slots Identification and Tracking Model
+Overview
+The objective of this project is to create a computer vision system that processes a top-down aerial image of a parking lot to detect individual parking slots and determine their occupancy status. The system must output the total number of slots, the number of occupied slots, and the number of available slots. The solution should handle real-world complexities such as irregular parking, large vehicles, and environmental variations, ensuring accurate detection and classification.
+Background
+In urban commercial areas like shopping malls, multiplexes, hospitals, and business complexes, the increasing number of vehicles has made efficient parking management critical. Manual supervision often leads to inefficiencies, including long queues, underutilized spaces, and poor user experiences. An automated system that detects and tracks parking slot occupancy using overhead camera images can improve operational efficiency and provide data for demand forecasting and infrastructure planning.
+Challenge Description
+The task is to analyze a single aerial image of a parking lot and extract the following:  
+
+Total number of parking slots (occupied and unoccupied).  
+Occupied slots (slots containing vehicles).  
+Available slots (empty slots).
+
+The system must account for various real-world scenarios and edge cases to ensure robust performance.
+Input Data
+
+A single top-down aerial image of a parking lot (e.g., as shown in Figure 1).  
+The image may vary in size, resolution, and lighting conditions.
+
+Output Data
+A CSV file named parking_status.csv with the following columns:  
+
+Total Slots: Total number of parking slots detected.  
+Occupied Slots: Number of slots occupied by vehicles.  
+Available Slots: Number of slots that are empty.Example row:
+
+Total Slots,Occupied Slots,Available Slots
+135,39,96
+
+Sample Image Description (Figure 1)
+High-Level Scene Description
+
+The image depicts a top-down aerial view of a large parking lot.  
+The lot is organized in a grid-based layout with multiple vertical lanes of parking slots.  
+Lanes are separated by concrete dividers (islands) containing poles or trees.  
+Standard car-sized slots dominate, with some areas marked for special purposes (e.g., handicapped parking).  
+Vehicles vary in size, type, color, and orientation.
+
+Key Elements to Detect
+
+Total parking slots: All valid slots, including occupied and unoccupied.  
+Occupied slots: Slots containing vehicles, including cases where vehicles span multiple slots.  
+Available slots: Empty slots with no vehicles.  
+Large vehicles: Trucks or trailers occupying multiple slots (e.g., 3–4 slots).  
+Misaligned vehicles: Vehicles not parked within slot boundaries (e.g., protruding or diagonal).  
+Moving vehicles: Vehicles in drive lanes or not fully parked, which should not count as occupying slots.  
+Non-standard objects: Trailers, food trucks, or construction equipment.  
+Special zones: Areas marked as handicapped parking (blue lines) or no-parking zones (yellow striped areas), which should be excluded from slot counts.
+
+Edge Cases and Challenges
+
+Large vehicles: At least 3 trucks or trailers occupy 3–4 car-sized slots each, requiring accurate segmentation to count affected slots.  
+Irregular parking: 2–3 vehicles are misaligned or parked diagonally, protruding beyond slot boundaries, complicating occupancy detection.  
+Moving vehicles: A few vehicles (e.g., a white car at center-right, a red car at top-center) are in drive lanes or angled, indicating they are not parked and should not be counted as occupying slots.  
+Color and lighting variations: Shadows from dividers or structures, reflections, and diverse vehicle colors create contrast challenges.  
+Special zones:  
+Blue lines indicate handicapped parking, which may have different slot dimensions or rules.  
+Yellow striped zones indicate no-parking areas, which must be excluded from slot counts.
+
+
+Occluded slot markings: Slot boundaries may be hidden under:  
+Large vehicles (e.g., trucks).  
+Shadows from dividers or structures.  
+Misaligned vehicles.The system must infer slot locations using the grid layout or surrounding slot patterns.
+
+
+Grid complexity: Vehicles parked on both sides of dividers increase the complexity of associating vehicles with specific slots.  
+Non-parking zone occupation: Some vehicles (e.g., a red car at the far bottom) are outside the slot grid, occupying non-parking areas.  
+Empty slots: Some slots are completely empty, providing clear cases for validating empty slot detection.  
+Landmarks: Long concrete dividers splitting every two lanes can serve as reference points for aligning the grid.
+
+Deliverables
+
+Output FileA CSV file named parking_status.csv containing the slot information as specified in the Output Data section.
+
+Code RepositoryA complete code repository provided as a .zip file, including:  
+
+All scripts and modules required to process the image and generate the output.  
+Organized code with clear functionality for each component.  
+A README.md file with instructions for running the code and a list of dependencies.
+
+
+ReportA concise report in .pdf format that includes:  
+
+Explanation of the approach used to address the challenge.  
+Description of tools and methods applied.  
+Analysis of performance, including how edge cases were handled and any limitations or assumptions.  
+Visual examples (e.g., annotated images) showing detected slots and their occupancy status.
+
+
+
+Additional Notes
+
+The focus is on processing the provided image to detect and classify parking slots. Integration with external systems (e.g., mobile apps or displays) is not required.  
+The system should be designed to generalize across different parking lot layouts and image conditions, though the provided image serves as the primary test case.
+
+This prompt outlines the requirements and challenges comprehensively, leaving the choice of techniques and technologies to the implementer while ensuring all critical aspects and edge cases are addressed.
