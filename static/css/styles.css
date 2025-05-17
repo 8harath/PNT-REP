@@ -1,0 +1,184 @@
+/* Core styles for the parking detection app */
+
+/* Base styles */
+body {
+    background-color: #212529;
+    color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Header styles */
+.header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: #17a2b8;
+}
+
+.header p {
+    font-size: 1.2rem;
+    color: #adb5bd;
+}
+
+/* Card styles */
+.card {
+    background-color: #2c3034;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+    overflow: hidden;
+}
+
+.card-header {
+    background-color: #343a40;
+    padding: 1rem;
+    border-bottom: 1px solid #495057;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Upload form styles */
+.upload-area {
+    border: 2px dashed #6c757d;
+    border-radius: 0.5rem;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.upload-area:hover {
+    border-color: #17a2b8;
+    background-color: rgba(23, 162, 184, 0.1);
+}
+
+.upload-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #6c757d;
+}
+
+.upload-text {
+    margin-bottom: 1rem;
+    color: #ced4da;
+}
+
+/* Results styles */
+.results {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.stats-card {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.stat-item {
+    background-color: #343a40;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #adb5bd;
+}
+
+/* Image result styles */
+.result-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+}
+
+/* Button styles */
+.btn-primary {
+    background-color: #17a2b8;
+    border: none;
+}
+
+.btn-primary:hover {
+    background-color: #138496;
+}
+
+.btn-outline-secondary {
+    color: #adb5bd;
+    border-color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #6c757d;
+    color: #fff;
+}
+
+/* Alert styles */
+.alert {
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Loading indicator */
+.loading {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Stats specific colors */
+.total-slots {
+    color: #17a2b8;
+}
+
+.occupied-slots {
+    color: #dc3545;
+}
+
+.available-slots {
+    color: #28a745;
+}
+
+.special-zones {
+    color: #ffc107;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+    
+    .header h1 {
+        font-size: 2rem;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+    }
+}
