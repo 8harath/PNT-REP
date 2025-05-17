@@ -4,190 +4,304 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parking Analysis Results</title>
-    
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
-    
-    <!-- Custom CSS -->
-    <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet">
-    
-    <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .stat-card {
+            height: 100%;
+            transition: transform 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        .edge-case-card {
+            border-left: 4px solid;
+            transition: transform 0.3s;
+        }
+        .edge-case-card:hover {
+            transform: translateY(-5px);
+        }
+        .result-image {
+            max-width: 100%;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .chart-container {
+            height: 300px;
+            margin-bottom: 2rem;
+        }
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            margin-right: 8px;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1><i class="fas fa-chart-bar"></i> Parking Analysis Results</h1>
-            <p>Analysis of your parking lot image</p>
+    <div class="container py-5">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Analysis Results</li>
+                    </ol>
+                </nav>
+                <h1 class="display-4 mb-3">Parking Analysis Results</h1>
+                <p class="text-secondary">Analysis timestamp: {{ result.timestamp }}</p>
+            </div>
         </div>
-        
-        <!-- Alert area for messages -->
-        <div id="alert-area">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-        </div>
-        
-        <div class="row">
-            <div class="col-lg-10 mx-auto">
-                <!-- Stats card with enhanced visualization -->
+
+        <div class="row mb-5">
+            <div class="col-lg-8">
                 <div class="card mb-4">
                     <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-tachometer-alt"></i> Parking Statistics</h5>
+                        <h5 class="card-title mb-0">Analyzed Parking Lot Image</h5>
                     </div>
                     <div class="card-body">
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <div class="stats-card">
-                                    <div class="stat-item">
-                                        <div class="stat-value total-slots">{{ result.total_slots }}</div>
-                                        <div class="stat-label">Total Parking Slots</div>
-                                    </div>
-                                    <div class="stat-item">
-                                        <div class="stat-value occupied-slots">{{ result.occupied_slots }}</div>
-                                        <div class="stat-label">Occupied Slots</div>
-                                    </div>
-                                    <div class="stat-item">
-                                        <div class="stat-value available-slots">{{ result.available_slots }}</div>
-                                        <div class="stat-label">Available Slots</div>
-                                    </div>
-                                    <div class="stat-item">
-                                        <div class="stat-value">{{ (result.occupied_slots / result.total_slots * 100) | round(1) }}%</div>
-                                        <div class="stat-label">Occupancy Rate</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="stats-card">
-                                    <!-- Edge case statistics -->
-                                    <div class="stat-item">
-                                        <div class="stat-value special-zones">{{ result.special_slots|default(0) }}</div>
-                                        <div class="stat-label">Special Zones</div>
-                                    </div>
-                                    <div class="stat-item">
-                                        <div class="stat-value large-vehicles" style="color: #FFA500;">{{ result.large_vehicles|default(0) }}</div>
-                                        <div class="stat-label">Large Vehicles</div>
-                                    </div>
-                                    <div class="stat-item">
-                                        <div class="stat-value moving-vehicles" style="color: #00A5FF;">{{ result.moving_vehicles|default(0) }}</div>
-                                        <div class="stat-label">Moving Vehicles</div>
-                                    </div>
-                                    <div class="stat-item">
-                                        <div class="stat-value misaligned" style="color: #B400B4;">{{ result.misaligned_vehicles|default(0) }}</div>
-                                        <div class="stat-label">Misaligned Parking</div>
-                                    </div>
-                                </div>
-                            </div>
+                        {% if result.image_data %}
+                        <img src="data:image/jpeg;base64,{{ result.image_data }}" alt="Analyzed Parking Lot" class="result-image">
+                        {% else %}
+                        <div class="alert alert-warning">No image data available</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Parking Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="occupancyChart"></canvas>
                         </div>
-                        
-                        <!-- Progress bar for parking capacity -->
-                        <div class="progress-container mt-3">
-                            <h6 class="mb-2">Parking Capacity Usage</h6>
-                            <div class="progress" style="height: 25px;">
-                                <div class="progress-bar bg-danger" role="progressbar" 
-                                     style="width: {{ (result.occupied_slots / result.total_slots * 100) | round(1) }}%;" 
-                                     aria-valuenow="{{ result.occupied_slots }}" 
-                                     aria-valuemin="0" 
-                                     aria-valuemax="{{ result.total_slots }}">
-                                     {{ (result.occupied_slots / result.total_slots * 100) | round(1) }}% Full
-                                </div>
+                        <div class="text-center">
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #20c997;"></div>
+                                <span>Available ({{ result.available_slots }})</span>
                             </div>
-                            <small class="text-muted mt-1 d-block">{{ result.occupied_slots }} of {{ result.total_slots }} parking spaces occupied</small>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #dc3545;"></div>
+                                <span>Occupied ({{ result.occupied_slots }})</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #fd7e14;"></div>
+                                <span>Special ({{ result.special_slots }})</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Analysis results -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-image"></i> Analyzed Image</h5>
-                    </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-3 mb-4">
+                <div class="card stat-card">
                     <div class="card-body text-center">
-                        <img src="data:image/png;base64,{{ result.image_data }}" class="result-image" alt="Analyzed Parking Lot">
-                        <div class="mt-3">
-                            <small class="text-muted">Image analyzed at: {{ result.timestamp }}</small>
-                        </div>
+                        <h5 class="card-title">Total Slots</h5>
+                        <div class="stat-value">{{ result.total_slots }}</div>
                     </div>
                 </div>
-                
-                <!-- Legend card -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-info-circle"></i> Image Legend</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6>Parking Spaces</h6>
-                                <ul class="list-unstyled">
-                                    <li><span class="badge" style="background-color: #00FF00;">&nbsp;&nbsp;&nbsp;&nbsp;</span> Available Parking Space</li>
-                                    <li><span class="badge" style="background-color: #FF0000;">&nbsp;&nbsp;&nbsp;&nbsp;</span> Occupied Parking Space</li>
-                                    <li><span class="badge" style="background-color: #FFFF00;">&nbsp;&nbsp;&nbsp;&nbsp;</span> Special Parking Zone</li>
-                                </ul>
-                            </div>
-                            <div class="col-md-6">
-                                <h6>Vehicle Types</h6>
-                                <ul class="list-unstyled">
-                                    <li><span class="badge" style="background-color: #0000FF;">&nbsp;&nbsp;&nbsp;&nbsp;</span> Car</li>
-                                    <li><span class="badge" style="background-color: #FF00FF;">&nbsp;&nbsp;&nbsp;&nbsp;</span> Motorcycle</li>
-                                    <li><span class="badge" style="background-color: #FFFF00;">&nbsp;&nbsp;&nbsp;&nbsp;</span> Bus</li>
-                                    <li><span class="badge" style="background-color: #FFA500;">&nbsp;&nbsp;&nbsp;&nbsp;</span> Truck</li>
-                                </ul>
-                            </div>
-                        </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="card stat-card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Occupied</h5>
+                        <div class="stat-value text-danger">{{ result.occupied_slots }}</div>
                     </div>
                 </div>
-                
-                <!-- CSV export info -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-file-csv"></i> CSV Report Generated</h5>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="card stat-card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Available</h5>
+                        <div class="stat-value text-success">{{ result.available_slots }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="card stat-card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Occupancy Rate</h5>
+                        <div class="stat-value">{{ (result.occupied_slots / result.total_slots * 100) | round(1) }}%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-12">
+                <h3 class="mb-4">Edge Case Analysis</h3>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card edge-case-card" style="border-color: #fd7e14;">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-p-circle me-2"></i> Special Zones</h5>
+                        <p class="card-text">
+                            Detected <strong>{{ result.special_slots }}</strong> special parking spaces 
+                            (e.g., handicapped, reserved), with <strong>{{ result.special_occupied }}</strong> currently occupied.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card edge-case-card" style="border-color: #6f42c1;">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-truck me-2"></i> Large Vehicles</h5>
+                        <p class="card-text">
+                            Identified <strong>{{ result.large_vehicles }}</strong> large vehicles (trucks, buses) 
+                            that occupy multiple parking slots.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card edge-case-card" style="border-color: #0dcaf0;">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-car-front me-2"></i> Moving Vehicles</h5>
+                        <p class="card-text">
+                            Detected <strong>{{ result.moving_vehicles }}</strong> vehicles in motion 
+                            through drive lanes, not parked in spaces.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card edge-case-card" style="border-color: #20c997;">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-arrow-left-right me-2"></i> Misaligned Parking</h5>
+                        <p class="card-text">
+                            Found <strong>{{ result.misaligned_vehicles }}</strong> vehicles parked irregularly 
+                            or at an angle to designated spaces.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Detailed Statistics</h5>
+                        <a href="{{ url_for('index') }}" class="btn btn-primary">Analyze Another Image</a>
                     </div>
                     <div class="card-body">
-                        <p>A CSV file has been generated with the following data:</p>
                         <div class="table-responsive">
-                            <table class="table table-bordered">
+                            <table class="table table-hover">
                                 <thead>
                                     <tr>
-                                        <th>Total Slots</th>
-                                        <th>Occupied Slots</th>
-                                        <th>Available Slots</th>
+                                        <th>Metric</th>
+                                        <th>Value</th>
+                                        <th>Percentage</th>
+                                        <th>Description</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
+                                        <td>Total Parking Slots</td>
                                         <td>{{ result.total_slots }}</td>
+                                        <td>100%</td>
+                                        <td>Total number of parking spaces detected</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Occupied Slots</td>
                                         <td>{{ result.occupied_slots }}</td>
+                                        <td>{{ (result.occupied_slots / result.total_slots * 100) | round(1) }}%</td>
+                                        <td>Spaces currently occupied by vehicles</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Available Slots</td>
                                         <td>{{ result.available_slots }}</td>
+                                        <td>{{ (result.available_slots / result.total_slots * 100) | round(1) }}%</td>
+                                        <td>Spaces available for parking</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Special Zones</td>
+                                        <td>{{ result.special_slots }}</td>
+                                        <td>{{ (result.special_slots / result.total_slots * 100) | round(1) }}%</td>
+                                        <td>Handicapped, reserved, or other special parking spaces</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Special Zones Occupied</td>
+                                        <td>{{ result.special_occupied }}</td>
+                                        <td>{{ (result.special_occupied / result.special_slots * 100) | round(1) if result.special_slots > 0 else 0 }}%</td>
+                                        <td>Special parking spaces currently in use</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Large Vehicles</td>
+                                        <td>{{ result.large_vehicles }}</td>
+                                        <td>{{ (result.large_vehicles / result.total_slots * 100) | round(1) }}%</td>
+                                        <td>Trucks/buses occupying multiple spaces</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Moving Vehicles</td>
+                                        <td>{{ result.moving_vehicles }}</td>
+                                        <td>N/A</td>
+                                        <td>Vehicles in transit through drive lanes</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Misaligned Vehicles</td>
+                                        <td>{{ result.misaligned_vehicles }}</td>
+                                        <td>{{ (result.misaligned_vehicles / result.occupied_slots * 100) | round(1) if result.occupied_slots > 0 else 0 }}%</td>
+                                        <td>Vehicles parked at angles or across lines</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
-                        <p class="mt-3"><small>File: <code>parking_status.csv</code></small></p>
                     </div>
-                </div>
-                
-                <!-- Action buttons -->
-                <div class="text-center mb-5">
-                    <a href="{{ url_for('index') }}" class="btn btn-primary me-2">
-                        <i class="fas fa-upload"></i> Analyze New Image
-                    </a>
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- Bootstrap Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Custom JS -->
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Occupancy Doughnut Chart
+            const occupancyChart = document.getElementById('occupancyChart');
+            new Chart(occupancyChart, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Available', 'Occupied', 'Special'],
+                    datasets: [{
+                        data: [
+                            {{ result.available_slots }}, 
+                            {{ result.occupied_slots - result.special_occupied }}, 
+                            {{ result.special_occupied }}
+                        ],
+                        backgroundColor: [
+                            '#20c997', // Available (green)
+                            '#dc3545', // Occupied (red)
+                            '#fd7e14'  // Special occupied (orange)
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>

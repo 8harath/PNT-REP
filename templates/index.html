@@ -3,112 +3,225 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Parking Space Detection</title>
-    
-    <!-- Bootstrap CSS -->
+    <title>Parking Space Analyzer</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
-    
-    <!-- Custom CSS -->
-    <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet">
-    
-    <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .upload-area {
+            border: 2px dashed var(--bs-secondary);
+            border-radius: 5px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            transition: border-color 0.3s;
+        }
+        .upload-area:hover {
+            border-color: var(--bs-info);
+        }
+        .upload-area.highlight {
+            border-color: var(--bs-info);
+            background-color: rgba(13, 202, 240, 0.1);
+        }
+        .file-input {
+            display: none;
+        }
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            margin-top: 1rem;
+        }
+        .feature-box {
+            background-color: rgba(33, 37, 41, 0.8);
+            border-radius: 5px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: transform 0.3s;
+            height: 100%;
+        }
+        .feature-box:hover {
+            transform: translateY(-5px);
+        }
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--bs-info);
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1><i class="fas fa-car"></i> Parking Space Detection System</h1>
-            <p>Upload an aerial image of a parking lot to detect and analyze parking spaces</p>
+    <div class="container py-5">
+        <div class="row mb-4">
+            <div class="col-lg-8 mx-auto text-center">
+                <h1 class="display-4 mb-3">Parking Space Analyzer</h1>
+                <p class="lead">Upload an aerial parking lot image to detect and analyze parking spaces with edge case handling</p>
+            </div>
         </div>
-        
-        <!-- Alert area for messages -->
-        <div id="alert-area">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-        </div>
-        
-        <div class="row">
-            <div class="col-lg-8 mx-auto">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-upload"></i> Upload Parking Lot Image</h5>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row justify-content-center mb-5">
+            <div class="col-lg-8">
+                <div class="card">
                     <div class="card-body">
-                        <form id="upload-form" action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data">
-                            <div class="upload-area" id="upload-area">
-                                <div class="upload-icon">
-                                    <i class="fas fa-cloud-upload-alt"></i>
+                        <form method="post" action="{{ url_for('upload_file') }}" enctype="multipart/form-data" id="upload-form">
+                            <div class="upload-area" id="drop-area">
+                                <i class="bi bi-cloud-upload feature-icon"></i>
+                                <h4>Drag & Drop or Click to Upload</h4>
+                                <p class="text-secondary mb-3">Supported formats: JPG, JPEG, PNG</p>
+                                <button type="button" class="btn btn-info" id="upload-button">Browse Files</button>
+                                <input type="file" name="file" id="file-input" class="file-input" accept=".jpg,.jpeg,.png">
+                                <div id="preview-container" class="mt-3 d-none">
+                                    <img id="preview-image" class="preview-image" alt="Preview">
+                                    <div class="mt-2">
+                                        <span id="file-name" class="d-block mb-2"></span>
+                                        <button type="submit" class="btn btn-primary">Analyze Image</button>
+                                        <button type="button" class="btn btn-secondary" id="change-file">Change File</button>
+                                    </div>
                                 </div>
-                                <div class="upload-text">
-                                    <p>Drag and drop your image here or click to browse</p>
-                                    <p class="text-muted small">Accepted formats: JPG, JPEG, PNG</p>
-                                </div>
-                                <input type="file" id="file-input" name="file" accept=".jpg,.jpeg,.png" class="d-none">
-                                <div id="file-name" style="display: none;" class="mt-3 text-info"></div>
-                            </div>
-                            
-                            <div class="text-center mt-4">
-                                <button id="upload-button" type="submit" class="btn btn-primary" style="display: none;">
-                                    <i class="fas fa-search"></i> Analyze Parking Spaces
-                                </button>
                             </div>
                         </form>
-                        
-                        <!-- Loading indicator -->
-                        <div id="loading" class="loading">
-                            <div class="spinner-border text-info" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                            <p class="mt-3">Analyzing parking spaces and vehicles...</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="card mt-4">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-info-circle"></i> About This Tool</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6><i class="fas fa-check-circle text-success"></i> Features</h6>
-                                <ul>
-                                    <li>Detects parking slots in aerial images</li>
-                                    <li>Identifies occupied and available spaces</li>
-                                    <li>Handles special zones (handicapped, no-parking)</li>
-                                    <li>Detects large vehicles spanning multiple spaces</li>
-                                    <li>Generates CSV report with parking statistics</li>
-                                </ul>
-                            </div>
-                            <div class="col-md-6">
-                                <h6><i class="fas fa-cogs text-info"></i> Technology</h6>
-                                <ul>
-                                    <li>Computer vision for slot detection</li>
-                                    <li>YOLOv8 for vehicle recognition</li>
-                                    <li>Advanced image processing techniques</li>
-                                    <li>Edge case handling algorithms</li>
-                                    <li>Real-time statistics generation</li>
-                                </ul>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
         </div>
+
+        <div class="row mb-5">
+            <div class="col-12 text-center mb-4">
+                <h2>Edge Case Handling Features</h2>
+                <p class="text-secondary">Our advanced computer vision model can detect and handle complex parking scenarios</p>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="feature-box">
+                    <i class="bi bi-truck feature-icon"></i>
+                    <h4>Large Vehicle Detection</h4>
+                    <p>Identifies trucks and buses occupying multiple parking slots</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="feature-box">
+                    <i class="bi bi-arrow-left-right feature-icon"></i>
+                    <h4>Misaligned Parking</h4>
+                    <p>Detects vehicles parked irregularly or across slot lines</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="feature-box">
+                    <i class="bi bi-car-front feature-icon"></i>
+                    <h4>Moving Vehicle Detection</h4>
+                    <p>Identifies vehicles in motion through drive lanes</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="feature-box">
+                    <i class="bi bi-p-circle feature-icon"></i>
+                    <h4>Special Zone Recognition</h4>
+                    <p>Identifies handicapped spaces and other special parking zones</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="feature-box">
+                    <i class="bi bi-eye-slash feature-icon"></i>
+                    <h4>Occluded Slot Detection</h4>
+                    <p>Handles slots with partially obscured markings</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="feature-box">
+                    <i class="bi bi-grid-3x3 feature-icon"></i>
+                    <h4>Complex Grid Analysis</h4>
+                    <p>Manages complex parking configurations and layouts</p>
+                </div>
+            </div>
+        </div>
     </div>
-    
-    <!-- Bootstrap Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Custom JS -->
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropArea = document.getElementById('drop-area');
+            const fileInput = document.getElementById('file-input');
+            const uploadButton = document.getElementById('upload-button');
+            const previewContainer = document.getElementById('preview-container');
+            const previewImage = document.getElementById('preview-image');
+            const fileName = document.getElementById('file-name');
+            const changeFileBtn = document.getElementById('change-file');
+
+            // Trigger file input when upload button is clicked
+            uploadButton.addEventListener('click', function() {
+                fileInput.click();
+            });
+
+            // Handle file selection
+            fileInput.addEventListener('change', function() {
+                handleFiles(this.files);
+            });
+
+            // Prevent default drag behaviors
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            // Highlight drop area when a file is dragged over it
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+
+            // Handle dropped files
+            dropArea.addEventListener('drop', handleDrop, false);
+
+            // Change file button
+            changeFileBtn.addEventListener('click', function() {
+                previewContainer.classList.add('d-none');
+                dropArea.classList.remove('d-none');
+                fileInput.value = '';
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            function highlight() {
+                dropArea.classList.add('highlight');
+            }
+
+            function unhighlight() {
+                dropArea.classList.remove('highlight');
+            }
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                handleFiles(files);
+            }
+
+            function handleFiles(files) {
+                if (files.length) {
+                    const file = files[0];
+                    if (file.type.match('image.*')) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            previewImage.src = e.target.result;
+                            fileName.textContent = file.name;
+                            previewContainer.classList.remove('d-none');
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                }
+            }
+        });
+    </script>
 </body>
 </html>
