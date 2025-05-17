@@ -138,7 +138,16 @@ def upload_file():
             csv_path = os.path.join(app.config['UPLOAD_FOLDER'], 'parking_status.csv')
             analyzer.create_report(result, csv_path)
             
-            # Store results in session
+            # Save image to static folder instead of session
+            image_filename = f"analyzed_{filename}"
+            image_path = os.path.join('static', 'uploads', image_filename)
+            
+            # Write the original image to the static folder
+            if result['image_data']:
+                with open(image_path, 'wb') as f:
+                    f.write(base64.b64decode(result['image_data']))
+            
+            # Store results in session (without the large image data)
             session['result_data'] = {
                 'total_slots': result['total_slots'],
                 'occupied_slots': result['occupied_slots'],
@@ -148,7 +157,7 @@ def upload_file():
                 'large_vehicles': result['large_vehicles'],
                 'moving_vehicles': result['moving_vehicles'],
                 'misaligned_vehicles': result['misaligned_vehicles'],
-                'image_data': result['image_data'],
+                'image_path': f"/static/uploads/{image_filename}",
                 'timestamp': result['timestamp']
             }
             
@@ -194,6 +203,16 @@ def api_analyze():
             csv_path = os.path.join(app.config['UPLOAD_FOLDER'], 'parking_status.csv')
             analyzer.create_report(result, csv_path)
             
+            # Save image to static folder instead of session
+            image_filename = f"api_analyzed_{filename}"
+            image_path = os.path.join('static', 'uploads', image_filename)
+            
+            # Write the original image to the static folder
+            if result['image_data']:
+                with open(image_path, 'wb') as f:
+                    f.write(base64.b64decode(result['image_data']))
+            
+            # Return results with image URL instead of base64 data
             return jsonify({
                 'total_slots': result['total_slots'],
                 'occupied_slots': result['occupied_slots'],
@@ -204,6 +223,7 @@ def api_analyze():
                 'moving_vehicles': result['moving_vehicles'],
                 'misaligned_vehicles': result['misaligned_vehicles'],
                 'occupancy_rate': (result['occupied_slots'] / result['total_slots'] * 100),
+                'image_url': f"/static/uploads/{image_filename}",
                 'success': True
             })
             

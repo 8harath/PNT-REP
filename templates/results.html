@@ -69,8 +69,8 @@
                         <h5 class="card-title mb-0">Analyzed Parking Lot Image</h5>
                     </div>
                     <div class="card-body">
-                        {% if result.image_data %}
-                        <img src="data:image/jpeg;base64,{{ result.image_data }}" alt="Analyzed Parking Lot" class="result-image">
+                        {% if result.image_path %}
+                        <img src="{{ result.image_path }}" alt="Analyzed Parking Lot" class="result-image">
                         {% else %}
                         <div class="alert alert-warning">No image data available</div>
                         {% endif %}
