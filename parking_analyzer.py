@@ -48,15 +48,21 @@ class ParkingAnalyzer:
         special_occupied = sum(1 for slot in special_zones if slot['occupied'])
         special_available = len(special_zones) - special_occupied
         
-        # Add visualization enhancement
-        self.enhance_visualization(
+        # Add enhanced visualization with complete edge case data
+        enhanced_image = self.enhance_visualization(
             annotated_image,
             total_slots,
             occupied_slots,
             available_slots,
             special_slots,
-            large_vehicles
+            large_vehicles,
+            special_occupied,
+            moving_vehicles_count,
+            misaligned_vehicles
         )
+        
+        # Replace the annotated image with the enhanced visualization
+        annotated_image = enhanced_image
         
         # Generate result
         result = {

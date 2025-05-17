@@ -1,15 +1,14 @@
 import os
-import cv2
-import numpy as np
-import pandas as pd
 import base64
 from datetime import datetime
+import pandas as pd
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
 from werkzeug.utils import secure_filename
 import logging
-from parking_detector import ParkingDetector
-from parking_analyzer import ParkingAnalyzer
+import sys
+import json
 from utils import create_temp_directory, cleanup_temp_files
+from edge_case_detector import EdgeCaseDetector
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -62,12 +61,19 @@ def upload_file():
             slots_data = detector.process_image(filepath)
             result = analyzer.analyze_parking_data(slots_data, filepath)
             
-            # Generate the CSV output
+            # Generate enhanced CSV output with all edge case data
             csv_path = os.path.join(app.config['UPLOAD_FOLDER'], 'parking_status.csv')
             df = pd.DataFrame({
                 'Total Slots': [result['total_slots']],
                 'Occupied Slots': [result['occupied_slots']],
-                'Available Slots': [result['available_slots']]
+                'Available Slots': [result['available_slots']],
+                'Special Zones': [result.get('special_slots', 0)],
+                'Special Occupied': [result.get('special_occupied', 0)],
+                'Large Vehicles': [result.get('large_vehicles', 0)],
+                'Moving Vehicles': [result.get('moving_vehicles', 0)],
+                'Misaligned Vehicles': [result.get('misaligned_vehicles', 0)],
+                'Occupancy Rate (%)': [(result['occupied_slots'] / result['total_slots'] * 100) if result['total_slots'] > 0 else 0],
+                'Timestamp': [datetime.now().strftime('%Y-%m-%d %H:%M:%S')]
             })
             df.to_csv(csv_path, index=False)
             
@@ -143,6 +149,12 @@ def api_analyze():
                 'total_slots': result['total_slots'],
                 'occupied_slots': result['occupied_slots'],
                 'available_slots': result['available_slots'],
+                'special_slots': result.get('special_slots', 0),
+                'special_occupied': result.get('special_occupied', 0),
+                'large_vehicles': result.get('large_vehicles', 0),
+                'moving_vehicles': result.get('moving_vehicles', 0),
+                'misaligned_vehicles': result.get('misaligned_vehicles', 0),
+                'occupancy_rate': (result['occupied_slots'] / result['total_slots'] * 100) if result['total_slots'] > 0 else 0,
                 'success': True
             })
             
